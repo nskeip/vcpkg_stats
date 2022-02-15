@@ -1,6 +1,37 @@
 #include <args.hxx>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <json/json.h>
+#include <optional>
+
+std::optional<std::string> read_homepage_from_json(const std::filesystem::path &json_path) {
+    using namespace std::filesystem;
+
+    if (!exists(json_path)) {
+        std::cerr << json_path << "does not exist!" << std::endl;
+        return std::nullopt;
+    }
+
+    std::fstream ifs(json_path, std::ios::in);
+
+    Json::Value root;
+    Json::CharReaderBuilder builder;
+    JSONCPP_STRING errs;
+    if (!Json::parseFromStream(builder, ifs, &root, &errs)) {
+        std::cerr << errs << std::endl;
+        return std::nullopt;
+    }
+
+    ifs.close();
+
+    const auto homepage = root["homepage"];
+    if (!homepage) {
+        return std::nullopt;
+    } else {
+        return homepage.asString();
+    }
+}
 
 void process_ports_directory(const std::filesystem::path &ports_path) {
     for (auto const &dir_entry: std::filesystem::directory_iterator{ports_path}) {
@@ -8,8 +39,10 @@ void process_ports_directory(const std::filesystem::path &ports_path) {
             const auto dir_path = dir_entry.path();
             const auto project_name = dir_path.filename();
             const auto project_json_file = dir_path / "vcpkg.json";
+            const auto homepage = read_homepage_from_json(project_json_file);
 
-            std::cout << dir_entry.path() << std::endl;
+            std::cout << dir_path.string() << " "
+                      << (homepage ? homepage.value() : "(no home page)") << std::endl;
         }
     }
 }
