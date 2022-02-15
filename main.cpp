@@ -1,9 +1,11 @@
 #include <args.hxx>
+#include <cpp20_internet_client.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <json/json.h>
 #include <optional>
+#include <vector>
 
 std::optional<std::string> read_homepage_from_json(const std::filesystem::path &json_path) {
     using namespace std::filesystem;
@@ -46,6 +48,9 @@ std::string github_address_to_rest_api_address(const std::string &homepage) {
 }
 
 void process_ports_directory(const std::filesystem::path &ports_path) {
+    using namespace internet_client;
+    std::vector<std::future<http::Response> *> resp_futures;
+
     for (auto const &dir_entry: std::filesystem::directory_iterator{ports_path}) {
         if (!dir_entry.is_directory()) {
             continue;
@@ -66,7 +71,19 @@ void process_ports_directory(const std::filesystem::path &ports_path) {
         }
 
         const auto project_name = dir_path.filename().string();
-        std::cout << project_name << ": " << github_address_to_rest_api_address(homepage) << '\n';
+        const auto gh_rest_addr = github_address_to_rest_api_address(homepage);
+
+        std::cout << project_name << ": " << gh_rest_addr << '\n';
+
+        auto f =
+                http::get(gh_rest_addr)
+                        .add_header({.name = "Accept",
+                                     .value = "application/vnd.github.v3+json"})
+                        .send_async();
+        resp_futures.push_back(&f);
+
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(100ms);
     }
 }
 
