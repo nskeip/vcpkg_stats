@@ -33,9 +33,16 @@ std::optional<std::string> read_homepage_from_json(const std::filesystem::path &
     }
 }
 
+const char *GITHUB_PREFIX = "https://github.com/";
+const size_t GITHUB_PREFIX_LEN = strlen(GITHUB_PREFIX);
+
 bool is_github_address(const std::string &url) {
-    const std::string gh_com("https://github.com/");
-    return url.compare(0, gh_com.length(), gh_com) == 0;
+    return url.compare(0, GITHUB_PREFIX_LEN, GITHUB_PREFIX) == 0;
+}
+
+std::string github_address_to_rest_api_address(const std::string &homepage) {
+    // https://github.com/john/example_project -> https://api.github.com/repos/john/example_project
+    return "https://api.github.com/repos/" + homepage.substr(GITHUB_PREFIX_LEN);
 }
 
 void process_ports_directory(const std::filesystem::path &ports_path) {
@@ -59,7 +66,7 @@ void process_ports_directory(const std::filesystem::path &ports_path) {
         }
 
         const auto project_name = dir_path.filename().string();
-        std::cout << project_name << ": " << homepage << '\n';
+        std::cout << project_name << ": " << github_address_to_rest_api_address(homepage) << '\n';
     }
 }
 
