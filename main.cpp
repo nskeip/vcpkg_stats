@@ -1,7 +1,6 @@
 #include <args.hxx>
 #include <cpp20_internet_client.hpp>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <json/json.h>
 #include <optional>
