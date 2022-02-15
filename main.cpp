@@ -33,17 +33,34 @@ std::optional<std::string> read_homepage_from_json(const std::filesystem::path &
     }
 }
 
+bool is_github_address(const std::string &url) {
+    const std::string gh_com("https://github.com/");
+    return url.compare(0, gh_com.length(), gh_com) == 0;
+}
+
 void process_ports_directory(const std::filesystem::path &ports_path) {
     for (auto const &dir_entry: std::filesystem::directory_iterator{ports_path}) {
-        if (dir_entry.is_directory()) {
-            const auto dir_path = dir_entry.path();
-            const auto project_name = dir_path.filename();
-            const auto project_json_file = dir_path / "vcpkg.json";
-            const auto homepage = read_homepage_from_json(project_json_file);
-
-            std::cout << dir_path.string() << " "
-                      << (homepage ? homepage.value() : "(no home page)") << std::endl;
+        if (!dir_entry.is_directory()) {
+            continue;
         }
+
+        const auto dir_path = dir_entry.path();
+        const auto project_json_file = dir_path / "vcpkg.json";
+
+        const auto maybe_homepage = read_homepage_from_json(project_json_file);
+        if (!maybe_homepage) {
+            continue;
+        }
+
+        const auto &homepage = maybe_homepage.value();
+        const auto is_github = is_github_address(homepage);
+
+        if (!is_github) {
+            continue;
+        }
+
+        const auto project_name = dir_path.filename().string();
+        std::cout << project_name << ": " << homepage << '\n';
     }
 }
 
