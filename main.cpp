@@ -2,6 +2,18 @@
 #include <filesystem>
 #include <iostream>
 
+void process_ports_directory(const std::filesystem::path &ports_path) {
+    for (auto const &dir_entry: std::filesystem::directory_iterator{ports_path}) {
+        if (dir_entry.is_directory()) {
+            const auto dir_path = dir_entry.path();
+            const auto project_name = dir_path.filename();
+            const auto project_json_file = dir_path / "vcpkg.json";
+
+            std::cout << dir_entry.path() << std::endl;
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     args::ArgumentParser parser("vcpkg repositories stats loader");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
@@ -43,6 +55,8 @@ int main(int argc, char **argv) {
                   << "it does not contain `ports` subdirectory" << std::endl;
         return 5;
     }
+
+    process_ports_directory(ports_path);
 
     return 0;
 }
