@@ -53,9 +53,8 @@ void process_ports_directory(const std::filesystem::path &ports_path) {
         }
 
         const auto &homepage = maybe_homepage.value();
-        const auto is_github = is_github_address(homepage);
 
-        if (!is_github) {
+        if (!is_github_address(homepage)) {
             continue;
         }
 
