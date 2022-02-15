@@ -48,7 +48,9 @@ std::string github_address_to_rest_api_address(const std::string &homepage) {
 
 void process_ports_directory(const std::filesystem::path &ports_path) {
     using namespace internet_client;
-    std::vector<std::future<http::Response> *> resp_futures;
+    using namespace std::chrono_literals;
+
+    std::vector<std::future<http::Response> *> futures;
 
     for (auto const &dir_entry: std::filesystem::directory_iterator{ports_path}) {
         if (!dir_entry.is_directory()) {
@@ -78,11 +80,15 @@ void process_ports_directory(const std::filesystem::path &ports_path) {
                 http::get(gh_rest_addr)
                         .add_header({.name = "Accept",
                                      .value = "application/vnd.github.v3+json"})
-                        .send_async();
-        resp_futures.push_back(&f);
+                        .send_async<256>();
+        futures.push_back(&f);
 
-        using namespace std::chrono_literals;
         std::this_thread::sleep_for(100ms);
+    }
+
+    for (const auto f: futures) {
+        const auto response = f->get();
+        std::cout << response.get_body_string() << '\n';
     }
 }
 
